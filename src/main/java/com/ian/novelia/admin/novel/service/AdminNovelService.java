@@ -2,7 +2,6 @@ package com.ian.novelia.admin.novel.service;
 
 import com.ian.novelia.admin.novel.repository.AdminNovelRepository;
 import com.ian.novelia.global.error.exception.CustomException;
-import com.ian.novelia.global.security.CustomUserDetails;
 import com.ian.novelia.novel.domain.Novel;
 import com.ian.novelia.novel.dto.response.GetNovelResponseDto;
 import com.ian.novelia.novel.search.NovelSearchCondition;
@@ -23,9 +22,7 @@ public class AdminNovelService {
 
     private final AdminNovelRepository adminNovelRepository;
 
-    public Page<GetNovelResponseDto> getNovels(
-            NovelSearchCondition searchCondition, Pageable pageable
-    ) {
+    public Page<GetNovelResponseDto> getNovels(NovelSearchCondition searchCondition, Pageable pageable) {
         return adminNovelRepository.searchNovels(
                         searchCondition.getSearchTypeOrNull(),
                         searchCondition.getKeywordOrNull(),
@@ -35,15 +32,15 @@ public class AdminNovelService {
                 .map(GetNovelResponseDto::from);
     }
 
-    public GetNovelResponseDto getNovel(Long novelId, CustomUserDetails userDetails) {
-        Novel novel = adminNovelRepository.findById(novelId)
+    public GetNovelResponseDto getNovel(Long novelId) {
+        Novel novel = adminNovelRepository.findByIdAndDeletedAtIsNull(novelId)
                 .orElseThrow(() -> new CustomException(NOVEL_NOT_FOUND));
 
         return GetNovelResponseDto.from(novel);
     }
 
     @Transactional
-    public void deleteNovels(List<Long> novelIds, CustomUserDetails userDetails) {
+    public void deleteNovels(List<Long> novelIds) {
         for (Long novelId : novelIds) {
             Novel novel = adminNovelRepository.findByIdAndDeletedAtIsNull(novelId)
                     .orElseThrow(() -> new CustomException(NOVEL_NOT_FOUND));

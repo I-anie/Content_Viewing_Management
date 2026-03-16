@@ -12,8 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static com.ian.novelia.auth.domain.Role.AUTHOR;
-import static com.ian.novelia.global.error.code.ErrorCode.*;
-import static com.ian.novelia.rolerequest.domain.RoleRequestStatus.PENDING;
+import static com.ian.novelia.global.error.code.ErrorCode.ROLE_REQUEST_ALREADY_AUTHOR;
+import static com.ian.novelia.global.error.code.ErrorCode.ROLE_REQUEST_DUPLICATE;
+import static com.ian.novelia.global.error.code.ErrorCode.USER_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
@@ -43,12 +44,20 @@ public class RoleRequestService {
     }
 
     private void validateAuthorRoleRequest(User user) {
-        if (user.getRoles().contains(AUTHOR)) {
+        if (isAuthor(user)) {
             throw new CustomException(ROLE_REQUEST_ALREADY_AUTHOR);
         }
 
-        if (roleRequestRepository.existsByUserAndStatus(user, PENDING)) {
+        if (hasPendingRoleRequest(user)) {
             throw new CustomException(ROLE_REQUEST_DUPLICATE);
         }
+    }
+
+    private boolean isAuthor(User user) {
+        return user.getRoles().contains(AUTHOR);
+    }
+
+    private boolean hasPendingRoleRequest(User user) {
+        return roleRequestRepository.existsPendingByUser(user);
     }
 }

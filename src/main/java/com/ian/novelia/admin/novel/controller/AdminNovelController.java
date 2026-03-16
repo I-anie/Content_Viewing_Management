@@ -3,7 +3,6 @@ package com.ian.novelia.admin.novel.controller;
 import com.ian.novelia.admin.novel.dto.request.AdminNovelDeleteRequestDto;
 import com.ian.novelia.admin.novel.service.AdminNovelService;
 import com.ian.novelia.global.response.ApiResponse;
-import com.ian.novelia.global.security.CustomUserDetails;
 import com.ian.novelia.novel.dto.response.GetNovelResponseDto;
 import com.ian.novelia.novel.search.NovelSearchCondition;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,7 +15,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -40,21 +38,17 @@ public class AdminNovelController {
 
     @GetMapping("/{novelId}")
     @Operation(summary = "소설 상세 조회", description = "소설 상세 정보를 조회합니다.")
-    public ResponseEntity<ApiResponse<GetNovelResponseDto>> getNovel(
-            @PathVariable Long novelId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        GetNovelResponseDto response = adminNovelService.getNovel(novelId, userDetails);
+    public ResponseEntity<ApiResponse<GetNovelResponseDto>> getNovel(@PathVariable Long novelId) {
+        GetNovelResponseDto response = adminNovelService.getNovel(novelId);
         return ResponseEntity.ok(ApiResponse.success("소설 상세 조회에 성공했습니다.", response));
     }
 
     @DeleteMapping
     @Operation(summary = "소설 일괄 삭제", description = "여러 소설을 일괄 삭제합니다.")
     public ResponseEntity<ApiResponse<Void>> deleteNovels(
-            @Valid @RequestBody AdminNovelDeleteRequestDto request,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @Valid @RequestBody AdminNovelDeleteRequestDto request
     ) {
-        adminNovelService.deleteNovels(request.getNovelIds(), userDetails);
+        adminNovelService.deleteNovels(request.getNovelIds());
         return ResponseEntity.ok(ApiResponse.success("소설 삭제에 성공했습니다.", null));
     }
 }

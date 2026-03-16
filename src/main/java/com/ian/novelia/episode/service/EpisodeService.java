@@ -16,10 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static com.ian.novelia.global.error.code.ErrorCode.EPISODE_NOT_FOUND;
-import static com.ian.novelia.global.error.code.ErrorCode.NOVEL_NOT_FOUND;
-import static com.ian.novelia.global.error.code.ErrorCode.PURCHASE_REQUIRED;
-import static com.ian.novelia.global.error.code.ErrorCode.USER_NOT_FOUND;
+import static com.ian.novelia.global.error.code.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -63,8 +60,12 @@ public class EpisodeService {
     }
 
     private void validatePurchased(Long userId, Long episodeId) {
-        if (!purchaseRepository.existsByUserIdAndEpisodeId(userId, episodeId)) {
+        if (!isPurchased(userId, episodeId)) {
             throw new CustomException(PURCHASE_REQUIRED);
         }
+    }
+
+    private boolean isPurchased(Long userId, Long episodeId) {
+        return purchaseRepository.existsByUserIdAndEpisodeId(userId, episodeId);
     }
 }

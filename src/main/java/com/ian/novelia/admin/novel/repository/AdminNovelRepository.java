@@ -23,6 +23,7 @@ public interface AdminNovelRepository extends JpaRepository<Novel, Long> {
                     or (:searchType = 'DESCRIPTION' and n.description like concat('%', :keyword, '%'))
                     or (:searchType = 'AUTHOR' and u.penName like concat('%', :keyword, '%'))
               )
+              and n.deletedAt is null
             """)
     Page<Novel> searchNovels(
             @Param("searchType") String searchType,

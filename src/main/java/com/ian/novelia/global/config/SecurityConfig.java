@@ -39,16 +39,19 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/auth/**", "/novels").permitAll()
-                        .requestMatchers("/docs", "/docs/**", "/api-docs", "/api-docs/**",
-                                "/swagger-ui/index.html", "/swagger-ui/**", "/v3/api-docs/**"
+                        .requestMatchers("/", "/auth/**").permitAll()
+                        .requestMatchers(
+                                "/docs", "/docs/**",
+                                "/api-docs", "/api-docs/**",
+                                "/swagger-ui/index.html", "/swagger-ui/**",
+                                "/v3/api-docs/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/novels").permitAll()
                         .requestMatchers(HttpMethod.GET, "/novels/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/novels/*/episodes").permitAll()
-                        .requestMatchers("/novels/**").authenticated()
                         .requestMatchers("/author/**").hasRole("AUTHOR")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/novels/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

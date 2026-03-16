@@ -54,8 +54,12 @@ public class PurchaseService {
     }
 
     private void validateNotPurchased(Long userId, Long episodeId) {
-        if (purchaseRepository.existsByUserIdAndEpisodeId(userId, episodeId)) {
+        if (isAlreadyPurchased(userId, episodeId)) {
             throw new CustomException(PURCHASE_ALREADY_PURCHASED);
         }
+    }
+
+    private boolean isAlreadyPurchased(Long userId, Long episodeId) {
+        return purchaseRepository.existsByUserIdAndEpisodeId(userId, episodeId);
     }
 }
