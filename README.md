@@ -1,39 +1,35 @@
-# 📌 Novelia
-
-노벨리아는 제로베이스 백엔드스쿨 부트캠프 수료 시, 최종 과제로 제출한 **웹소설 플랫폼 백엔드 개인 프로젝트**입니다.  
-JWT 기반 인증과 역할 기반 인가를 적용하여 일반 사용자(`USER`), 작가(`AUTHOR`), 관리자(`ADMIN`) 권한을 분리하고,  
-작가 권한 요청/승인, 소설·회차 관리, 회차 구매 및 열람 제한 기능을 **REST API**로 구현했습니다.
+# 📌 콘텐츠 열람 관리
+해당 프로젝트는 제로베이스 백엔드스쿨 부트캠프 수료 시, 최종 과제로 제출한 JWT 기반 인증과 역할 기반 접근 제어를 적용한 콘텐츠 관리 웹 애플리케이션입니다.
+개인 프로젝트지만 PR 기반 코드리뷰를 받는 형식으로 진행되었습니다.
 
 ---
 
 ## 📝 프로젝트 소개
 
-노벨리아는 아래와 같은 흐름을 중심으로 설계했습니다.
-
-- JWT 기반 로그인 인증
-- 역할별 API 접근 제어
-- 일반 사용자 → 작가 권한 요청 → 관리자 승인 프로세스
-- 회차 구매 후 열람 가능한 구조
-- 공통 응답 형식 및 전역 예외 처리
+Spring Security JWT 기반 인증과 역할 별 인가를 적용 하여 사용자·작가·관리자 권한을 분리한 콘텐츠 관리 서비스입니다.
+사용자는 작품 목록과 회차 정보를 조회하고, 회차를 구매한 뒤 열람할 수 있도록 구현했습니다.
+작가는 자신의 작품과 회차를 등록·수정·삭제하며 콘텐츠를 관리할 수 있습니다.
+관리자는 작가 권한 요청을 승인 또는 거절할 수 있도록 하여, 권한 변경과 콘텐츠 운영이 가능한 구조로 구성했습니다.
 
 ---
 
 ## 💻 기술 스택
 
-**Backend**  
-Java 17, Spring Boot, Spring Security, JWT, Spring Data JPA
+Java 17, Spring Boot, Spring Security, JWT, Spring Data JPA, MySQL, Swagger(OpenAPI)
 
-**Database**  
-MySQL
+  
+### 기술 사용 이유
 
-**Infra / Tools**  
-AWS S3, Gradle, Git / GitHub, IntelliJ IDEA, Postman, Swagger(OpenAPI)
+| 기술 | 사용 이유 |
+| --- | --- |
+| Spring  Data JPA | 제한된 기간 내에 결과물을 완성해야 하는 부트캠프 과제 특성을 고려해, 직접 SQL을 세밀하게 작성하기보다 반복적인 CRUD와 객체 중심 개발에 적합한 JPA를 선택 |
+| JWT | REST API의 특성상 서버가 세션을 별도로 관리하지 않고도 인증을 처리할 수 있도록 JWT를 적용 |
 
 ---
 
 ## 🔄 플로우차트
 
-JWT 인증과 역할 기반 인가를 바탕으로 사용자 권한별 주요 기능 흐름을 정리했습니다.
+### 사용자 흐름
 
 ```mermaid
 flowchart TD
@@ -51,6 +47,19 @@ flowchart TD
 
   J --> K[소설 관리]
   J --> L[회차 관리]
+```
+
+### 작가 권한 요청 상태 전이
+```mermaid
+stateDiagram-v2
+    direction LR
+
+    [*] --> 요청없음
+    요청없음 --> PENDING : 사용자 작가 권한 요청
+    PENDING --> 승인완료 : 관리자 승인
+    PENDING --> REJECTED : 관리자 거절
+    승인완료 : AUTHOR 추가
+    승인완료 : PenName 반영
 ```
 
 ---
@@ -93,7 +102,7 @@ src/main/java/com/ian/novelia
 
 - 일반 사용자는 필명을 포함해 작가 권한 요청 가능
 - 관리자는 요청을 승인 또는 거절 가능
-- 승인 시 사용자 권한이 `AUTHOR`로 변경되고 필명이 반영됨
+- 승인 시 기존 USER 권한을 유지한 채 AUTHOR 권한이 추가되고 필명이 반영됨
 
 ### 📚 소설 관리
 
@@ -128,59 +137,20 @@ src/main/java/com/ian/novelia
 
 ---
 
-## 🚀 핵심 구현 포인트
-
-### 1. JWT 기반 인증 처리
-
-Spring Security와 JWT를 활용해 로그인 인증 흐름을 구현했습니다.  
-로그인 성공 시 액세스 토큰을 발급하고, 요청마다 JWT 필터를 통해 사용자 인증을 처리했습니다.
-
-### 2. 역할 기반 인가 설계
-
-`USER`, `AUTHOR`, `ADMIN` 권한을 분리하고 역할별 접근 범위를 설계했습니다.  
-`@PreAuthorize`를 활용해 API 레벨에서 권한 검사를 적용했습니다.
-
-### 3. 작가 권한 요청/승인 프로세스 구현
-
-일반 사용자가 작가 권한을 요청하고, 관리자가 이를 승인 또는 거절할 수 있도록 구현했습니다.  
-승인 시 사용자 권한이 `AUTHOR`로 변경되고 필명 정보가 반영되도록 처리했습니다.
-
-### 4. 회차 구매 및 열람 제한 구현
-
-회차 구매 기능을 별도 도메인으로 분리해 구현했습니다.  
-구매 여부를 검증하여, 구매한 사용자만 회차 상세를 조회할 수 있도록 제한했습니다.
-
----
-
 ## 🛠️ 트러블슈팅
+- [작가 권한 승인 시 기존 사용자 권한이 사라지던 문제 해결](docs/troubleshooting/author-role-approval-multi-role.md)
+- [Spring Data JPA 파생 쿼리 조건 순서와 인자 순서 불일치 문제](docs/troubleshooting/jpa-derived-query-parameter-order.md)
 
-### 1. multipart/form-data 요청 처리 시 DTO 바인딩 문제
+<details>
+<summary>기타 트러블슈팅 보기</summary>
 
-`multipart/form-data` 요청 처리 중 DTO 필드가 정상적으로 바인딩되지 않는 문제가 있었습니다.  
-원인은 `@ModelAttribute`가 setter 기반으로 요청 값을 주입하는데 DTO에 setter가 없어 바인딩이 실패한 것이었고, `@Setter`를 추가해 해결했습니다.
+- [multipart/form-data 요청 처리 시 DTO 바인딩 문제](docs/troubleshooting/multipart-formdata-dto-binding.md)
+- [수정 로직에서 변경 내용이 반영되지 않던 문제](docs/troubleshooting/jpa-dirty-checking-transaction.md)
+- [상속 구조에서 Builder 생성 오류](docs/troubleshooting/lombok-superbuilder-inheritance.md)
+- [Builder 사용 시 기본값 미반영 문제](docs/troubleshooting/lombok-builder-default-value.md)
 
-### 2. 수정 로직에서 변경 내용이 반영되지 않던 문제
+</details>
 
-엔티티를 조회한 뒤 값을 변경했지만 DB에 수정 사항이 반영되지 않는 문제가 있었습니다.  
-원인을 추적한 결과 서비스 계층 수정 메서드에 `@Transactional`이 누락되어 있었고, 이로 인해 JPA의 더티체킹이 정상적으로 동작하지 않았습니다.  
-수정 로직에 트랜잭션을 적용해 문제를 해결했으며, 이 경험을 통해 엔티티 변경이 발생하는 로직에서는 트랜잭션 경계도 함께 확인해야 한다는 점을 정리할 수 있었습니다.
-
-### 3. Lombok Builder 적용 시 상속 구조와 기본값 처리 문제
-
-엔티티 생성 시 생성자 파라미터가 많아져 Builder 패턴을 적용하는 과정에서 두 가지 문제를 겪었습니다.
-
-첫 번째는 `BaseEntity`를 상속하는 엔티티에 `@Builder`를 적용했을 때 빌더 생성 오류가 발생한 점입니다.  
-원인은 `@Builder`가 상속 구조를 고려하지 않기 때문이었고, 이를 `@SuperBuilder`로 변경해 해결했습니다.
-
-두 번째는 필드에 기본값을 지정했음에도 `@Builder`로 객체를 생성할 때 초기값이 반영되지 않는 문제였습니다.  
-원인은 Lombok Builder가 필드 초기화 값을 자동으로 보장하지 않기 때문이었고, 기본값이 필요한 필드에 `@Builder.Default`를 적용해 해결했습니다.
-
-이 경험을 통해 Builder 패턴은 단순히 생성자 가독성을 높이는 도구가 아니라, 상속 구조와 기본값 처리 방식도 함께 확인해야 한다는 점을 알게 되었습니다.
-
-### 4. Spring Data JPA 파생 쿼리 조건 순서와 인자 순서 불일치 문제
-
-회차 상세 조회 기능 구현 중, DB에 데이터가 존재함에도 조회 결과가 반환되지 않는 문제가 있었습니다.  
-원인을 확인한 결과 파생 쿼리 메서드 조건 순서와 전달 인자 순서가 일치하지 않았던 것이 문제였고, 메서드명과 파라미터 순서를 맞춰 수정해 해결했습니다.
 
 ---
 
